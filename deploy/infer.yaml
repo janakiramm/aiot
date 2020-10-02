@@ -30,7 +30,7 @@ spec:
       initContainers:
       - name: busybox
         image: odise/busybox-curl 
-        command: ['sh', '-c', 'if [ ! -f /data/model/saved_model.pb ]; then mkdir -p /data/model && curl -o /tmp/model.zip https://srv-file7.gofile.io/downloadStore/srv-store2/UFItaD/model.zip && unzip /tmp/model.zip -d /data/model && rm /tmp/model.zip ; fi']
+        command: ['sh', '-c', 'if [ ! -f /data/model/saved_model.pb ]; then mkdir -p /data/model && curl -o /tmp/model.zip https://raw.githubusercontent.com/janakiramm/aiot/main/model/model.zip && unzip /tmp/model.zip -d /data/model && rm /tmp/model.zip ; fi']
         volumeMounts:
         - name: model-data
           mountPath: /data        
