@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: influxdb
+  namespace: aiot
+  labels:
+    component: influxdb
+    app: influxdb
+spec:
+  clusterIP: None
+  ports:
+  - port: 8086
+    name: server
+  selector:
+    component: influxdb
+  publishNotReadyAddresses: true
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: influxdb
+  namespace: aiot  
+  labels:
+    component: influxdb
+    app: influxdb
+spec:
+  serviceName: influxdb
+  selector:
+    matchLabels:
+      component: influxdb
+  replicas: 1
+  template:
+    metadata:
+      name: influxdb
+      labels:
+        component: influxdb
+        app: influxdb
+    spec:
+      containers:
+      - name: influxdb
+        image: docker.io/influxdb:1.6
+        lifecycle:
+          postStart:
+            exec:
+              command:
+                - /bin/sh
+                - "-c"
+                - until curl -s http://localhost:8086/ping; do sleep 1; done; influx -execute "CREATE DATABASE fan"
+        env:
+          - name: INFLUXDB_IFQL_ENABLED
+            value: "true"
+          - name: INFLUXDB_LOGGING_LEVEL
+            value: "error"
+          - name: INFLUXDB_HTTP_LOG_ENABLED
+            value: "false"
+        volumeMounts:
+          - name: data
+            mountPath: /var/lib/influxdb
+        ports:
+          - containerPort: 8086
+            name: server
+          - containerPort: 8082
+            name: ifql
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+      annotations:
+        volume.beta.kubernetes.io/storage-class: db-sc
+    spec:
+      accessModes:
+        - "ReadWriteOnce"
+      resources:
+        requests:
+          storage: 10Gi
+---

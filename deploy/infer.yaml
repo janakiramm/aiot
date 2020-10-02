@@ -1,0 +1,66 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: infer-pvc
+  namespace: aiot  
+  annotations:
+    volume.beta.kubernetes.io/storage-class: infer-sc
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infer
+  namespace: aiot  
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: infer
+  template:
+    metadata:
+      labels:
+        app: infer
+    spec:
+      initContainers:
+      - name: busybox
+        image: odise/busybox-curl 
+        command: ['sh', '-c', 'if [ ! -f /data/model/saved_model.pb ]; then mkdir -p /data/model && curl -o /tmp/model.zip https://srv-file7.gofile.io/downloadStore/srv-store2/UFItaD/model.zip && unzip /tmp/model.zip -d /data/model && rm /tmp/model.zip ; fi']
+        volumeMounts:
+        - name: model-data
+          mountPath: /data        
+      containers:
+      - name: infer
+        image: janakiramm/score
+        env:
+          - name: MODEL_DIR
+            value: "/data/model"
+        ports:
+        - containerPort: 5000
+        volumeMounts:
+        - name: model-data
+          mountPath: /data
+      volumes:
+      - name: model-data
+        persistentVolumeClaim:
+          claimName: infer-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: infer
+  namespace: aiot  
+spec:
+  selector:
+    app: infer
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      name: "5000"
+      port: 5000
+      targetPort: 5000

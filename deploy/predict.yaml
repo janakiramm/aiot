@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: predict
+  namespace: aiot  
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: predict
+  template:
+    metadata:
+      labels:
+        app: predict
+    spec:
+      initContainers:
+      - name: wait-for-mosquitto
+        image: janakiramm/wait
+        args: ["--timeout=60", "mosquitto:1883"]
+      - name: wait-for-infer
+        image: janakiramm/wait
+        args: ["--timeout=60", "infer:5000"]      
+      containers:
+      - name: predict
+        image: janakiramm/predict
+        env:
+          - name: MQTT_HOST
+            value: "mosquitto"
+          - name: MQTT_DEV_TOPIC
+            value: "fan/messages"
+          - name: MQTT_PREDICT_TOPIC
+            value: "fan/anomaly"
+          - name: SCORING_URL
+            value: "http://infer:5000/score"
+
+
+
+
+

@@ -1,0 +1,13 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: score-pvc
+  namespace: aiot  
+  annotations:
+    volume.beta.kubernetes.io/storage-class: score-sc
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 2Gi

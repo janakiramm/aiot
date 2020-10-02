@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fan-2
+  namespace: aiot  
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fan-2
+  template:
+    metadata:
+      labels:
+        app: fan-2
+    spec:
+      initContainers:
+      - name: wait-for-mosquitto
+        image: janakiramm/wait
+        args: ["--timeout=60", "mosquitto:1883"]      
+      containers:
+      - name: fan-2
+        image: janakiramm/fan
+        imagePullPolicy: Always
+        env:
+          - name: MQTT_HOST
+            value: "mosquitto"
+          - name: MQTT_TOPIC
+            value: "fan/messages"
+          - name: FAULT
+            value: "1"
+          - name: DEVICE_ID
+            value: "2"
+
+
+
+

@@ -1,0 +1,81 @@
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: mosquitto-data-pvc
+  namespace: aiot  
+  annotations:
+    volume.beta.kubernetes.io/storage-class: db-sc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: mosquitto-log-pvc
+  namespace: aiot  
+  annotations:
+    volume.beta.kubernetes.io/storage-class: db-sc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mosquitto
+  namespace: aiot  
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mosquitto
+  template:
+    metadata:
+      labels:
+        app: mosquitto
+    spec:
+      containers:
+      - name: mosquitto
+        image: eclipse-mosquitto
+        ports:
+        - containerPort: 9001
+        - containerPort: 8883
+        volumeMounts:
+        - name: mosquitto-data
+          mountPath: /mosquitto/data
+        - name: mosquitto-log
+          mountPath: /mosquitto/log/
+      volumes:
+      - name: mosquitto-data
+        persistentVolumeClaim:
+          claimName: mosquitto-data-pvc
+      - name: mosquitto-log
+        persistentVolumeClaim:
+          claimName: mosquitto-log-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mosquitto
+  namespace: aiot  
+spec:
+  selector:
+    app: mosquitto
+  type: LoadBalancer
+  ports:
+    - protocol: TCP
+      name: "9001"
+      port: 9001
+      targetPort: 9001
+    - protocol: TCP
+      name: "1883"
+      port: 1883
+      targetPort: 1883      
