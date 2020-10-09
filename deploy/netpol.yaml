@@ -6,7 +6,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: score
+      app: infer
   policyTypes:
   - Ingress
   ingress:
